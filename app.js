@@ -479,7 +479,7 @@ async function registerPositionInDB(tagId, tipoMarca) {
 
     const payload = {
         action: 'submit_form',
-        formulario: 'RONDINES',
+        formulario: 'RONDINES_V2', // <--- ESTE ES EL CAMBIO CLAVE PARA EL PROXY
         condominio: STATE.session.condominioId,
         usuario: STATE.session.usuario,
         data: {
@@ -488,7 +488,7 @@ async function registerPositionInDB(tagId, tipoMarca) {
             Condominio: STATE.session.condominioId,
             Fecha: new Date().toISOString(),
             TipoMarca: tipoMarca, 
-            Ruta: STATE.ruta.tipo, // <-- Ahora se envía qué ruta eligió
+            Ruta: STATE.ruta.tipo,
             Estatus: "Completado"
         }
     };
