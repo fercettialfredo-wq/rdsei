@@ -1,1 +1,40 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <!-- Cambia "Nuevo Nombre de App" por el nombre que le darás a este proyecto -->
+    <title>Nuevo Nombre de App</title>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#000000"> 
+    <link rel="apple-touch-icon" href="icon-192.png">
 
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
+</head>
+<body>
+
+    <div id="app-container">
+        <div id="viewport" class="h-full"></div>
+    </div>
+
+    <div id="status-modal" class="modal-overlay"></div>
+
+    <script src="app.js"></script>
+
+    <script>
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('./sw.js')
+                    .then((reg) => {
+                        console.log('Service Worker registrado con éxito:', reg.scope);
+                    })
+                    .catch((err) => {
+                        console.error('Error al registrar el Service Worker:', err);
+                    });
+            });
+        }
+    </script>
+</body>
+</html>
