@@ -72,7 +72,8 @@ const STATE = {
     ruta: {
         enCurso: false,
         tipo: null, // Guardará 'TORRES' o 'AREAS_COMUNES'
-        pasoActual: 1
+        pasoActual: 1,
+        sesionId: null // ID único para evitar duplicados en la sesión actual
     },
     isScanning: false,
     isProcessing: false, 
@@ -241,11 +242,15 @@ function actualizarUIRuta() {
     }
 }
 
+// Al iniciar, generamos un ID único para la ruta y preparamos la UI.
 function iniciarRecorrido(tipo) {
     if (!STATE.ruta.enCurso) {
         STATE.ruta.enCurso = true;
         STATE.ruta.tipo = tipo;
         STATE.ruta.pasoActual = 1;
+        // Creamos un ID único (timestamp) para evitar duplicados en este recorrido exacto
+        STATE.ruta.sesionId = new Date().getTime().toString(); 
+        
         guardarEstadoRuta();
         actualizarUIRuta();
         
@@ -259,6 +264,7 @@ function cancelarRecorrido() {
         STATE.ruta.enCurso = false;
         STATE.ruta.tipo = null;
         STATE.ruta.pasoActual = 1;
+        STATE.ruta.sesionId = null;
         guardarEstadoRuta();
         actualizarUIRuta();
     }
@@ -448,7 +454,7 @@ async function handleNFCReading(event) {
 
     // 4. Lógica Híbrida: Azure solo para Inicio y Fin
     if (tipoMarca === "Inicio" || tipoMarca === "Fin") {
-        await registerPositionInDB(serialNumber, tipoMarca);
+        await registerPositionInDB(serialNumber, tipoMarca, STATE.ruta.sesionId);
     } else {
         showModal('success', `Punto ${STATE.ruta.pasoActual} validado: ${tagInfo.nombre}`);
     }
@@ -457,7 +463,8 @@ async function handleNFCReading(event) {
     if (STATE.ruta.pasoActual === totalPasos) {
         STATE.ruta.enCurso = false;
         STATE.ruta.pasoActual = 1;
-        STATE.ruta.tipo = null; // Reiniciar selección
+        STATE.ruta.tipo = null; 
+        STATE.ruta.sesionId = null; // Limpiamos la sesión al terminar
         
         setTimeout(() => {
             showModal('success', "¡RECORRIDO COMPLETADO CON ÉXITO!");
@@ -474,12 +481,38 @@ async function handleNFCReading(event) {
    4. COMUNICACIÓN INICIO/FIN CON AZURE + COLA PENDIENTE
    ========================================= */
 
-async function registerPositionInDB(tagId, tipoMarca) {
+// El teléfono guarda los "mensajes exitosos" para no repetirlos
+function registrarMensajeExitoso(sesionId, tipoMarca) {
+    if (!sesionId) return;
+    let exitosos = JSON.parse(localStorage.getItem('ravensMensajesEnviados')) || {};
+    exitosos[`${sesionId}_${tipoMarca}`] = true;
+    localStorage.setItem('ravensMensajesEnviados', JSON.stringify(exitosos));
+}
+
+function mensajeYaFueEnviado(sesionId, tipoMarca) {
+    if (!sesionId) return false;
+    let exitosos = JSON.parse(localStorage.getItem('ravensMensajesEnviados')) || {};
+    return exitosos[`${sesionId}_${tipoMarca}`] === true;
+}
+
+// Limpia el historial de mensajes exitosos viejos (opcional, para no llenar la memoria)
+function limpiarHistorialExitosos() {
+    localStorage.setItem('ravensMensajesEnviados', JSON.stringify({}));
+}
+
+async function registerPositionInDB(tagId, tipoMarca, sesionId) {
+    
+    // VALIDACIÓN ANTI-DUPLICADOS: Si este mensaje ya se mandó en esta sesión, lo ignoramos.
+    if (mensajeYaFueEnviado(sesionId, tipoMarca)) {
+        showModal('success', `Paso validado localmente (Aviso de ${tipoMarca} ya se había enviado).`);
+        return;
+    }
+
     showModal('loading', `Procesando aviso de ${tipoMarca}...`);
 
     const payload = {
         action: 'submit_form',
-        formulario: 'RONDINES_V2', // <--- ESTE ES EL CAMBIO CLAVE PARA EL PROXY
+        formulario: 'RONDINES_V2', 
         condominio: STATE.session.condominioId,
         usuario: STATE.session.usuario,
         data: {
@@ -490,7 +523,9 @@ async function registerPositionInDB(tagId, tipoMarca) {
             TipoMarca: tipoMarca, 
             Ruta: STATE.ruta.tipo,
             Estatus: "Completado"
-        }
+        },
+        // Guardamos el sesionId en el payload para que el Sync Offline sepa a quién pertenece
+        meta_sesionId: sesionId 
     };
 
     if (!navigator.onLine) {
@@ -507,7 +542,13 @@ async function registerPositionInDB(tagId, tipoMarca) {
         });
 
         if (response.ok) {
+            // Anotamos que ya se envió para que no se duplique si el usuario vuelve a presionar o se reconecta
+            registrarMensajeExitoso(sesionId, tipoMarca);
             showModal('success', `Aviso de ${tipoMarca} registrado en línea.`);
+            
+            // Si es Fin, podemos limpiar el historial viejo para no ocupar memoria
+            if (tipoMarca === 'Fin') limpiarHistorialExitosos();
+
         } else {
             saveToOfflineQueue(payload);
             showModal('error', `Error del servidor. El aviso de ${tipoMarca} se guardó en pendientes.`);
@@ -526,7 +567,7 @@ function saveToOfflineQueue(payload) {
 }
 
 // -----------------------------------------------------
-// FUNCIÓN DE SINCRONIZACIÓN MANUAL
+// FUNCIÓN DE SINCRONIZACIÓN MANUAL (CON ANTI-DUPLICADOS)
 // -----------------------------------------------------
 async function syncOfflineData(isManual = false) {
     if (!navigator.onLine) {
@@ -540,28 +581,40 @@ async function syncOfflineData(isManual = false) {
         return;
     }
 
-    if (isManual) showModal('loading', `Enviando ${queue.length} avisos pendientes...`);
+    if (isManual) showModal('loading', `Revisando ${queue.length} avisos pendientes...`);
 
     let newQueue = [];
     let successCount = 0;
+    let ignoradosCount = 0;
     let lastErrorMsg = ""; 
 
     for (let i = 0; i < queue.length; i++) {
+        let item = queue[i];
+        let sesionId = item.meta_sesionId;
+        let tipoMarca = item.data.TipoMarca;
+
+        // Si el candado dice que este mensaje ya se envió exitosamente antes, lo ignoramos y lo borramos de la cola.
+        if (mensajeYaFueEnviado(sesionId, tipoMarca)) {
+            ignoradosCount++;
+            continue; 
+        }
+
         try {
             const response = await fetch(CONFIG.API_PROXY_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(queue[i])
+                body: JSON.stringify(item)
             });
             
             if (response.ok) {
+                registrarMensajeExitoso(sesionId, tipoMarca);
                 successCount++;
             } else {
-                newQueue.push(queue[i]); 
+                newQueue.push(item); 
                 lastErrorMsg = "Rechazado por el servidor";
             }
         } catch (error) {
-            newQueue.push(queue[i]); 
+            newQueue.push(item); 
             lastErrorMsg = "Fallo de red o Proxy caído";
         }
 
@@ -573,7 +626,10 @@ async function syncOfflineData(isManual = false) {
     
     if (isManual) {
         if (newQueue.length === 0) {
-            showModal('success', "¡Avisos pendientes enviados con éxito!");
+            let msg = successCount > 0 ? `¡${successCount} avisos enviados con éxito!` : "Cola limpia. No había avisos nuevos que enviar.";
+            if (ignoradosCount > 0) msg += ` (${ignoradosCount} duplicados ignorados).`;
+            showModal('success', msg);
+            limpiarHistorialExitosos();
         } else {
             showModal('error', `Se enviaron ${successCount}. Fallaron ${newQueue.length}. Motivo: ${lastErrorMsg}`);
         }
