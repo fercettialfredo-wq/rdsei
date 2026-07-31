@@ -1,6 +1,6 @@
 {
-  "name": "Nuevo Nombre App",
-  "short_name": "Nuevo Nombre",
+  "name": "Ravens access",
+  "short_name": "Ravens access",
   "start_url": "index.html",
   "display": "standalone",
   "background_color": "#000000",
