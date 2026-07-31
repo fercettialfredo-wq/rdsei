@@ -230,7 +230,7 @@ function actualizarUIRuta() {
         const catalogo = getCatalogoActivo();
         const totalPasos = getTotalPasosActivo();
         const nombreEsperado = getNombrePaso(STATE.ruta.pasoActual, catalogo);
-        const nombreRutaStr = STATE.ruta.tipo === 'TORRES' ? 'Torres' : 'Áreas Comunes';
+        const nombreRutaStr = STATE.ruta.tipo === 'GENERAL' ? 'General' : 'Áreas Comunes';
 
         info.innerHTML = `Ruta: ${nombreRutaStr}<br>Paso ${STATE.ruta.pasoActual} de ${totalPasos}<br><span style="color:white; font-size:0.9rem;">Dirígete a: ${nombreEsperado}</span>`;
         
