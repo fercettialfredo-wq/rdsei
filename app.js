@@ -131,8 +131,8 @@ const SCREENS = {
                     </div>
                     
                     <div id="botones-inicio" style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
-                        <button class="btn-primary" onclick="iniciarRecorrido('TORRES')" style="padding: 10px; font-size: 0.9rem; flex: 1; min-width: 120px;">
-                            INICIAR TORRES
+                        <button class="btn-primary" onclick="iniciarRecorrido('GENERAL')" style="padding: 10px; font-size: 0.9rem; flex: 1; min-width: 120px;">
+                            INICIAR GENERAL
                         </button>
                         <button class="btn-primary" onclick="iniciarRecorrido('AREAS_COMUNES')" style="padding: 10px; font-size: 0.9rem; flex: 1; min-width: 120px; background: #10b981;">
                             INICIAR ÁREAS
