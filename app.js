@@ -93,7 +93,7 @@ const SCREENS = {
                 <div style="text-align:center; margin-bottom:40px;">
                     <img src="icons/logo.png" alt="Logo" style="width: 120px; height: auto; margin-bottom: 15px;">
                     
-                    <h1 style="color:white; font-size:1.6rem; margin:0;">N</h1>
+                    <h1 style="color:white; font-size:1.6rem; margin:0;">Ravens access</h1>
                     <p style="color:#666; font-size:0.8rem;">Control de Rondines NFC</Ravens access
                 </div>
                 <div class="input-group">
