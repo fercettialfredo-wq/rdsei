@@ -1,5 +1,5 @@
 // Cambia "NuevoNombreApp" por el nombre de tu proyecto sin espacios
-const CACHE_NAME = 'Ravens access ';
+const CACHE_NAME = 'Ravens access v2';
 
 const assets = [
   './',
