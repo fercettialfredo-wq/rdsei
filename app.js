@@ -7,6 +7,14 @@ const CONFIG = {
     API_PROXY_URL: 'https://proxyguard.azurewebsites.net/api/ravens-proxy'
 };
 
+// Se modifican las llaves de memoria para forzar a los teléfonos a olvidar rutas "fantasma" del pasado
+const STORAGE_KEYS = {
+    RUTA: 'ravensRuta_v3',
+    USER: 'ravensGuardUser_v3',
+    QUEUE: 'ravensOfflineQueue_v3',
+    SENT: 'ravensMensajesEnviados_v3'
+};
+
 // =========================================================
 // CATÁLOGOS DE RUTAS (SEPARADOS)
 // =========================================================
@@ -25,7 +33,7 @@ const CATALOGO_GENERAL = {
     "5A:64:89:C2:07:41:89": { orden: 11, nombre: "Sotano principal" },
     "5A:A4:C6:BF:07:41:89": { orden: 12, nombre: "Entrada vehicular" },
     "5A:24:89:C5:07:41:89": { orden: 13, nombre: "Azotea torre A 2 Y 3" },
-    "5A:34:D1:02:07:41:89": { orden: 14, nombre: "Piso 15" }, // Corregido: era O2 (letra O), se cambió a 02 (cero)
+    "5A:34:D1:C2:07:41:89": { orden: 14, nombre: "Piso 15" }, // Corregido: Letra 'C'
     "5A:54:7F:C2:07:41:89": { orden: 15, nombre: "Piso 11" },
     "5A:94:C6:BF:07:41:89": { orden: 16, nombre: "Piso 6" },
     "5A:14:89:C5:07:41:89": { orden: 17, nombre: "Nivel 1" },
@@ -39,7 +47,7 @@ const CATALOGO_GENERAL = {
     "5A:74:70:AF:08:41:89": { orden: 25, nombre: "Piso 10" },
     "5A:04:D1:C2:07:41:89": { orden: 26, nombre: "Piso 5" },
     "5A:24:7F:C2:07:41:89": { orden: 27, nombre: "Ultimo depto/Sotano 4" },
-    "5A:64:06:BF:07:41:89": { orden: 28, nombre: "Azotea torre B 6 Y 7" }, // Corregido: era O6 (letra O), se cambió a 06 (cero)
+    "5A:64:C6:BF:07:41:89": { orden: 28, nombre: "Azotea torre B 6 Y 7" }, // Corregido: Letra 'C'
     "5A:E4:88:C5:07:41:89": { orden: 29, nombre: "Piso 15" },
     "5A:F4:D0:C2:07:41:89": { orden: 30, nombre: "Piso 10" },
     "5A:14:7F:C2:07:41:89": { orden: 31, nombre: "Piso 5" },
@@ -90,7 +98,7 @@ const SCREENS = {
                 <div style="text-align:center; margin-bottom:40px;">
                     <img src="icons/logo.png" alt="Logo" style="width: 120px; height: auto; margin-bottom: 15px;">
                     
-                    <h1 style="color:white; font-size:1.6rem; margin:0;">Ravens access</h1>
+                    <h1 style="color:white; font-size:1.6rem; margin:0;">RAVENS GUARD SEI</h1>
                     <p style="color:#666; font-size:0.8rem;">Control de Rondines NFC</p>
                 </div>
                 <div class="input-group">
@@ -174,7 +182,6 @@ function navigate(screenName) {
     }
 }
 
-// CORRECCIÓN: El código anterior buscaba 'TORRES' en lugar de 'GENERAL'
 function getCatalogoActivo() {
     return STATE.ruta.tipo === 'GENERAL' ? CATALOGO_GENERAL : CATALOGO_AREAS_COMUNES;
 }
@@ -195,11 +202,14 @@ function getNombrePaso(ordenBuscado, catalogo) {
 function encontrarTagEnCatalogo(serialLeido) {
     if (!serialLeido || !STATE.ruta.tipo) return null;
     
+    // Normalizamos quitando espacios y forzando mayúsculas. 
+    // Mantenemos la C ya que está correcta en tu hardware.
     const leidoLimpio = serialLeido.trim().toUpperCase();
     const catalogo = getCatalogoActivo();
     
     for (const key in catalogo) {
-        if (key.trim().toUpperCase() === leidoLimpio) {
+        const keyLimpia = key.trim().toUpperCase();
+        if (keyLimpia === leidoLimpio) {
             return catalogo[key];
         }
     }
@@ -207,14 +217,14 @@ function encontrarTagEnCatalogo(serialLeido) {
 }
 
 function cargarEstadoRuta() {
-    const guardado = localStorage.getItem('ravensRuta');
+    const guardado = localStorage.getItem(STORAGE_KEYS.RUTA);
     if (guardado) {
         STATE.ruta = JSON.parse(guardado);
     }
 }
 
 function guardarEstadoRuta() {
-    localStorage.setItem('ravensRuta', JSON.stringify(STATE.ruta));
+    localStorage.setItem(STORAGE_KEYS.RUTA, JSON.stringify(STATE.ruta));
 }
 
 function actualizarUIRuta() {
@@ -241,13 +251,11 @@ function actualizarUIRuta() {
     }
 }
 
-// CORRECCIÓN: Al iniciar NO se manda el mensaje de Azure, solo se prepara el sistema.
 function iniciarRecorrido(tipo) {
     if (!STATE.ruta.enCurso) {
         STATE.ruta.enCurso = true;
         STATE.ruta.tipo = tipo;
         STATE.ruta.pasoActual = 1;
-        // Creamos un ID único (timestamp) para evitar duplicados en este recorrido exacto
         STATE.ruta.sesionId = new Date().getTime().toString(); 
         
         guardarEstadoRuta();
@@ -306,7 +314,7 @@ async function doLogin() {
                 usuario: user
             };
             
-            localStorage.setItem('ravensGuardUser', JSON.stringify(STATE.session));
+            localStorage.setItem(STORAGE_KEYS.USER, JSON.stringify(STATE.session));
             cargarEstadoRuta();
             navigate('MAIN');
         } else { 
@@ -321,14 +329,14 @@ async function doLogin() {
 }
 
 function doLogout() {
-    localStorage.removeItem('ravensGuardUser');
+    localStorage.removeItem(STORAGE_KEYS.USER);
     STATE.session = { isLoggedIn: false, condominioId: null, usuario: null };
     navigate('LOGIN');
 }
 
 function checkSession() {
     try {
-        const saved = localStorage.getItem('ravensGuardUser');
+        const saved = localStorage.getItem(STORAGE_KEYS.USER);
         if (saved) {
             const parsedData = JSON.parse(saved);
             
@@ -428,7 +436,6 @@ async function handleNFCReading(event) {
 
     resetScanUI();
 
-    // 1. Validar usando el catálogo de la ruta actual
     const tagInfo = encontrarTagEnCatalogo(serialNumber);
     const catalogoActivo = getCatalogoActivo();
     const totalPasos = getTotalPasosActivo();
@@ -439,31 +446,30 @@ async function handleNFCReading(event) {
         return;
     }
 
-    // 2. Validar orden estricto localmente
     if (tagInfo.orden !== STATE.ruta.pasoActual) {
         const nombreEsperado = getNombrePaso(STATE.ruta.pasoActual, catalogoActivo);
         showModal('error', `¡Punto Incorrecto! Estás en '${tagInfo.nombre}'. Te toca ir a: '${nombreEsperado}' (Paso ${STATE.ruta.pasoActual})`);
         return;
     }
 
-    // 3. Determinar Tipo de Marca
+    // Determinar Tipo de Marca
     let tipoMarca = "Rondín";
     if (STATE.ruta.pasoActual === 1) tipoMarca = "Inicio";
     if (STATE.ruta.pasoActual === totalPasos) tipoMarca = "Fin";
 
-    // 4. Lógica Híbrida: Azure solo para Inicio y Fin (Cuando FÍSICAMENTE se escanea el tag)
+    // Azure solo para Inicio y Fin (Cuando FÍSICAMENTE se escanea el tag)
     if (tipoMarca === "Inicio" || tipoMarca === "Fin") {
         await registerPositionInDB(serialNumber, tipoMarca, STATE.ruta.sesionId);
     } else {
         showModal('success', `Punto ${STATE.ruta.pasoActual} validado: ${tagInfo.nombre}`);
     }
 
-    // 5. Avanzar de paso
+    // Avanzar de paso
     if (STATE.ruta.pasoActual === totalPasos) {
         STATE.ruta.enCurso = false;
         STATE.ruta.pasoActual = 1;
         STATE.ruta.tipo = null; 
-        STATE.ruta.sesionId = null; // Limpiamos la sesión al terminar
+        STATE.ruta.sesionId = null; 
         
         setTimeout(() => {
             showModal('success', "¡RECORRIDO COMPLETADO CON ÉXITO!");
@@ -480,28 +486,25 @@ async function handleNFCReading(event) {
    4. COMUNICACIÓN INICIO/FIN CON AZURE + COLA PENDIENTE
    ========================================= */
 
-// El teléfono guarda los "mensajes exitosos" para no repetirlos
 function registrarMensajeExitoso(sesionId, tipoMarca) {
     if (!sesionId) return;
-    let exitosos = JSON.parse(localStorage.getItem('ravensMensajesEnviados')) || {};
+    let exitosos = JSON.parse(localStorage.getItem(STORAGE_KEYS.SENT)) || {};
     exitosos[`${sesionId}_${tipoMarca}`] = true;
-    localStorage.setItem('ravensMensajesEnviados', JSON.stringify(exitosos));
+    localStorage.setItem(STORAGE_KEYS.SENT, JSON.stringify(exitosos));
 }
 
 function mensajeYaFueEnviado(sesionId, tipoMarca) {
     if (!sesionId) return false;
-    let exitosos = JSON.parse(localStorage.getItem('ravensMensajesEnviados')) || {};
+    let exitosos = JSON.parse(localStorage.getItem(STORAGE_KEYS.SENT)) || {};
     return exitosos[`${sesionId}_${tipoMarca}`] === true;
 }
 
-// Limpia el historial de mensajes exitosos viejos
 function limpiarHistorialExitosos() {
-    localStorage.setItem('ravensMensajesEnviados', JSON.stringify({}));
+    localStorage.setItem(STORAGE_KEYS.SENT, JSON.stringify({}));
 }
 
 async function registerPositionInDB(tagId, tipoMarca, sesionId) {
     
-    // VALIDACIÓN ANTI-DUPLICADOS
     if (mensajeYaFueEnviado(sesionId, tipoMarca)) {
         showModal('success', `Paso validado localmente (Aviso de ${tipoMarca} ya se había enviado).`);
         return;
@@ -556,22 +559,19 @@ async function registerPositionInDB(tagId, tipoMarca, sesionId) {
 }
 
 function saveToOfflineQueue(payload) {
-    let queue = JSON.parse(localStorage.getItem('ravensOfflineQueue')) || [];
+    let queue = JSON.parse(localStorage.getItem(STORAGE_KEYS.QUEUE)) || [];
     queue.push(payload);
-    localStorage.setItem('ravensOfflineQueue', JSON.stringify(queue));
+    localStorage.setItem(STORAGE_KEYS.QUEUE, JSON.stringify(queue));
     updateSyncUI();
 }
 
-// -----------------------------------------------------
-// FUNCIÓN DE SINCRONIZACIÓN MANUAL (CON ANTI-DUPLICADOS)
-// -----------------------------------------------------
 async function syncOfflineData(isManual = false) {
     if (!navigator.onLine) {
         if (isManual) showModal('error', "Aún no hay conexión a internet estable.");
         return;
     }
 
-    let queue = JSON.parse(localStorage.getItem('ravensOfflineQueue')) || [];
+    let queue = JSON.parse(localStorage.getItem(STORAGE_KEYS.QUEUE)) || [];
     if (queue.length === 0) {
         updateSyncUI();
         return;
@@ -616,7 +616,7 @@ async function syncOfflineData(isManual = false) {
         await new Promise(resolve => setTimeout(resolve, 500));
     }
 
-    localStorage.setItem('ravensOfflineQueue', JSON.stringify(newQueue));
+    localStorage.setItem(STORAGE_KEYS.QUEUE, JSON.stringify(newQueue));
     updateSyncUI();
     
     if (isManual) {
@@ -635,7 +635,7 @@ function updateSyncUI() {
     const syncBadge = document.getElementById('sync-status');
     if (!syncBadge) return;
 
-    let queue = JSON.parse(localStorage.getItem('ravensOfflineQueue')) || [];
+    let queue = JSON.parse(localStorage.getItem(STORAGE_KEYS.QUEUE)) || [];
     if (queue.length > 0) {
         syncBadge.style.display = 'inline-block';
         syncBadge.innerHTML = `<i class="fas fa-sync-alt"></i> ${queue.length} Pendiente(s)`;
