@@ -10,8 +10,6 @@ const CONFIG = {
 // =========================================================
 // CATÁLOGOS DE RUTAS (SEPARADOS)
 // =========================================================
-// AQUÍ DEBES ACOMODAR TUS TAGS. 
-// Asegúrate de que el 'orden' empiece en 1 para CADA recorrido.
 
 const CATALOGO_GENERAL = {
     "5A:54:89:C5:07:41:89": { orden: 1, nombre: "Sala de recepción (INICIO DE RECORRIDO GENERAL)" },
@@ -27,7 +25,7 @@ const CATALOGO_GENERAL = {
     "5A:64:89:C2:07:41:89": { orden: 11, nombre: "Sotano principal" },
     "5A:A4:C6:BF:07:41:89": { orden: 12, nombre: "Entrada vehicular" },
     "5A:24:89:C5:07:41:89": { orden: 13, nombre: "Azotea torre A 2 Y 3" },
-    "5A:34:D1:O2:07:41:89": { orden: 14, nombre: "Piso 15" },
+    "5A:34:D1:02:07:41:89": { orden: 14, nombre: "Piso 15" }, // Corregido: era O2 (letra O), se cambió a 02 (cero)
     "5A:54:7F:C2:07:41:89": { orden: 15, nombre: "Piso 11" },
     "5A:94:C6:BF:07:41:89": { orden: 16, nombre: "Piso 6" },
     "5A:14:89:C5:07:41:89": { orden: 17, nombre: "Nivel 1" },
@@ -41,12 +39,11 @@ const CATALOGO_GENERAL = {
     "5A:74:70:AF:08:41:89": { orden: 25, nombre: "Piso 10" },
     "5A:04:D1:C2:07:41:89": { orden: 26, nombre: "Piso 5" },
     "5A:24:7F:C2:07:41:89": { orden: 27, nombre: "Ultimo depto/Sotano 4" },
-    "5A:64:O6:BF:07:41:89": { orden: 28, nombre: "Azotea torre B 6 Y 7" },
+    "5A:64:06:BF:07:41:89": { orden: 28, nombre: "Azotea torre B 6 Y 7" }, // Corregido: era O6 (letra O), se cambió a 06 (cero)
     "5A:E4:88:C5:07:41:89": { orden: 29, nombre: "Piso 15" },
     "5A:F4:D0:C2:07:41:89": { orden: 30, nombre: "Piso 10" },
     "5A:14:7F:C2:07:41:89": { orden: 31, nombre: "Piso 5" },
     "5A:54:C6:BF:07:41:89": { orden: 32, nombre: "Nivel 1 Torre B (FIN DE RECORRIDO GENERAL)" }
-   
 };
 
 const CATALOGO_AREAS_COMUNES = {
@@ -72,7 +69,7 @@ const STATE = {
     },
     ruta: {
         enCurso: false,
-        tipo: null, // Guardará 'TORRES' o 'AREAS_COMUNES'
+        tipo: null, // Guardará 'GENERAL' o 'AREAS_COMUNES'
         pasoActual: 1,
         sesionId: null // ID único para evitar duplicados en la sesión actual
     },
@@ -94,7 +91,7 @@ const SCREENS = {
                     <img src="icons/logo.png" alt="Logo" style="width: 120px; height: auto; margin-bottom: 15px;">
                     
                     <h1 style="color:white; font-size:1.6rem; margin:0;">Ravens access</h1>
-                    <p style="color:#666; font-size:0.8rem;">Control de Rondines NFC</Ravens access
+                    <p style="color:#666; font-size:0.8rem;">Control de Rondines NFC</p>
                 </div>
                 <div class="input-group">
                     <label>Usuario</label>
@@ -177,8 +174,9 @@ function navigate(screenName) {
     }
 }
 
+// CORRECCIÓN: El código anterior buscaba 'TORRES' en lugar de 'GENERAL'
 function getCatalogoActivo() {
-    return STATE.ruta.tipo === 'TORRES' ? CATALOGO_TORRES : CATALOGO_AREAS_COMUNES;
+    return STATE.ruta.tipo === 'GENERAL' ? CATALOGO_GENERAL : CATALOGO_AREAS_COMUNES;
 }
 
 function getTotalPasosActivo() {
@@ -243,7 +241,7 @@ function actualizarUIRuta() {
     }
 }
 
-// Al iniciar, generamos un ID único para la ruta y preparamos la UI.
+// CORRECCIÓN: Al iniciar NO se manda el mensaje de Azure, solo se prepara el sistema.
 function iniciarRecorrido(tipo) {
     if (!STATE.ruta.enCurso) {
         STATE.ruta.enCurso = true;
@@ -255,8 +253,8 @@ function iniciarRecorrido(tipo) {
         guardarEstadoRuta();
         actualizarUIRuta();
         
-        const nombreRuta = tipo === 'TORRES' ? 'Torres' : 'Áreas Comunes';
-        showModal('success', `Recorrido de ${nombreRuta} iniciado. Dirígete al Paso 1.`);
+        const nombreRuta = tipo === 'GENERAL' ? 'General' : 'Áreas Comunes';
+        showModal('success', `Recorrido de ${nombreRuta} iniciado. Dirígete a escanear el Paso 1.`);
     }
 }
 
@@ -453,7 +451,7 @@ async function handleNFCReading(event) {
     if (STATE.ruta.pasoActual === 1) tipoMarca = "Inicio";
     if (STATE.ruta.pasoActual === totalPasos) tipoMarca = "Fin";
 
-    // 4. Lógica Híbrida: Azure solo para Inicio y Fin
+    // 4. Lógica Híbrida: Azure solo para Inicio y Fin (Cuando FÍSICAMENTE se escanea el tag)
     if (tipoMarca === "Inicio" || tipoMarca === "Fin") {
         await registerPositionInDB(serialNumber, tipoMarca, STATE.ruta.sesionId);
     } else {
@@ -496,14 +494,14 @@ function mensajeYaFueEnviado(sesionId, tipoMarca) {
     return exitosos[`${sesionId}_${tipoMarca}`] === true;
 }
 
-// Limpia el historial de mensajes exitosos viejos (opcional, para no llenar la memoria)
+// Limpia el historial de mensajes exitosos viejos
 function limpiarHistorialExitosos() {
     localStorage.setItem('ravensMensajesEnviados', JSON.stringify({}));
 }
 
 async function registerPositionInDB(tagId, tipoMarca, sesionId) {
     
-    // VALIDACIÓN ANTI-DUPLICADOS: Si este mensaje ya se mandó en esta sesión, lo ignoramos.
+    // VALIDACIÓN ANTI-DUPLICADOS
     if (mensajeYaFueEnviado(sesionId, tipoMarca)) {
         showModal('success', `Paso validado localmente (Aviso de ${tipoMarca} ya se había enviado).`);
         return;
@@ -525,7 +523,6 @@ async function registerPositionInDB(tagId, tipoMarca, sesionId) {
             Ruta: STATE.ruta.tipo,
             Estatus: "Completado"
         },
-        // Guardamos el sesionId en el payload para que el Sync Offline sepa a quién pertenece
         meta_sesionId: sesionId 
     };
 
@@ -543,11 +540,9 @@ async function registerPositionInDB(tagId, tipoMarca, sesionId) {
         });
 
         if (response.ok) {
-            // Anotamos que ya se envió para que no se duplique si el usuario vuelve a presionar o se reconecta
             registrarMensajeExitoso(sesionId, tipoMarca);
             showModal('success', `Aviso de ${tipoMarca} registrado en línea.`);
             
-            // Si es Fin, podemos limpiar el historial viejo para no ocupar memoria
             if (tipoMarca === 'Fin') limpiarHistorialExitosos();
 
         } else {
@@ -594,7 +589,6 @@ async function syncOfflineData(isManual = false) {
         let sesionId = item.meta_sesionId;
         let tipoMarca = item.data.TipoMarca;
 
-        // Si el candado dice que este mensaje ya se envió exitosamente antes, lo ignoramos y lo borramos de la cola.
         if (mensajeYaFueEnviado(sesionId, tipoMarca)) {
             ignoradosCount++;
             continue; 
