@@ -20,7 +20,7 @@ const STORAGE_KEYS = {
 // =========================================================
 
 const CATALOGO_GENERAL = {
-    "5A:34:85:BC:07:41:89": { orden: 1, nombre: "Caseta (INICIO DE RECORRIDO GENERAL)" },
+    "5A:94:07:BC:07:41:89": { orden: 1, nombre: "Caseta (INICIO DE RECORRIDO GENERAL)" },
     "5A:F4:7E:C2:07:41:89": { orden: 2, nombre: "Estacionaiento 6-15" },
     "5A:D4:D0:C2:07:41:89": { orden: 3, nombre: "Estacionaiento 1-6" },
     "5A:34:C6:BF:07:41:89": { orden: 4, nombre: "Entrada veicular 16-24" },
@@ -44,7 +44,7 @@ const CATALOGO_GENERAL = {
 };
 
 const CATALOGO_AREAS_COMUNES = {
-    "5A:34:85:BC:07:41:89": { orden: 1, nombre: "Caseta (INICIO DE RECORRIDO GENERAL)" },
+    "5A:94:07:BC:07:41:89": { orden: 1, nombre: "Caseta (INICIO DE RECORRIDO GENERAL)" },
     "5A:F4:7E:C2:07:41:89": { orden: 2, nombre: "Estacionaiento 6-15" },
     "5A:D4:D0:C2:07:41:89": { orden: 3, nombre: "Estacionaiento 1-6" },
     "5A:34:C6:BF:07:41:89": { orden: 4, nombre: "Entrada veicular 16-24" },
