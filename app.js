@@ -1,5 +1,5 @@
 /* =========================================
-   RAVENS GUARD - NFC TRACKING (DUAL ROUTE)
+   RAVENS GUARD - NFC TRACKING (ONLINE ONLY)
    ========================================= */
 
 const CONFIG = {
@@ -7,12 +7,10 @@ const CONFIG = {
     API_PROXY_URL: 'https://proxyguard.azurewebsites.net/api/ravens-proxy'
 };
 
-// Se modifican las llaves de memoria para forzar a los teléfonos a olvidar rutas "fantasma" del pasado
+// Actualizamos las llaves para resetear cualquier caché viejo en los teléfonos
 const STORAGE_KEYS = {
-    RUTA: 'ravensRuta_v3',
-    USER: 'ravensGuardUser_v3',
-    QUEUE: 'ravensOfflineQueue_v3',
-    SENT: 'ravensMensajesEnviados_v3'
+    RUTA: 'ravensRuta_v4',
+    USER: 'ravensGuardUser_v4'
 };
 
 // =========================================================
@@ -21,9 +19,9 @@ const STORAGE_KEYS = {
 
 const CATALOGO_GENERAL = {
     "5A:94:07:BC:07:41:89": { orden: 1, nombre: "Caseta (INICIO DE RECORRIDO GENERAL)" },
-    "5A:F4:7E:C2:07:41:89": { orden: 2, nombre: "Estacionaiento 6-15" },
-    "5A:D4:D0:C2:07:41:89": { orden: 3, nombre: "Estacionaiento 1-6" },
-    "5A:34:C6:BF:07:41:89": { orden: 4, nombre: "Entrada veicular 16-24" },
+    "5A:F4:7E:C2:07:41:89": { orden: 2, nombre: "Estacionamiento 6-15" },
+    "5A:D4:D0:C2:07:41:89": { orden: 3, nombre: "Estacionamiento 1-6" },
+    "5A:34:C6:BF:07:41:89": { orden: 4, nombre: "Entrada vehicular 16-24" },
     "5A:C4:D0:C2:07:41:89": { orden: 5, nombre: "Salón de jovenes" },
     "5A:B4:88:C5:07:41:89": { orden: 6, nombre: "Corredor" },
     "5A:E4:7E:C2:07:41:89": { orden: 7, nombre: "Sala de juegos" },
@@ -33,28 +31,28 @@ const CATALOGO_GENERAL = {
     "5A:34:55:BF:07:41:89": { orden: 11, nombre: "Azotea D-E"},
     "5A:24:C6:BF:07:41:89": { orden: 12, nombre: "Lobby torre E" },
     "5A:A4:88:C5:07:41:89": { orden: 13, nombre: "Lobby torre A" },
-    "5A:B4:D0:C2:07:41:89": { orden: 14, nombre: "Azadores" },
+    "5A:B4:D0:C2:07:41:89": { orden: 14, nombre: "Asadores" },
     "5A:D4:7E:C2:07:41:89": { orden: 15, nombre: "Alberca" },
     "5A:14:C6:BF:07:41:89": { orden: 16, nombre: "GYM" },
     "5A:94:88:C5:07:41:89": { orden: 17, nombre: "Salon de eventos" },
     "5A:A4:D0:C2:07:41:89": { orden: 18, nombre: "Cancha de raquetbol" },
     "5A:04:C6:BF:07:41:89": { orden: 19, nombre: "Sotano E5" },
     "5A:44:55:BF:07:41:89": { orden: 20, nombre: "Sotano E4" },
-    "5A:34:85:BC:07:41:89": { orden: 21, nombre: "Caseta fIN DE RECORRIDO GENERAL)" }
+    "5A:34:85:BC:07:41:89": { orden: 21, nombre: "Caseta (FIN DE RECORRIDO GENERAL)" }
 };
 
 const CATALOGO_AREAS_COMUNES = {
     "5A:94:07:BC:07:41:89": { orden: 1, nombre: "Caseta (INICIO DE RECORRIDO GENERAL)" },
-    "5A:F4:7E:C2:07:41:89": { orden: 2, nombre: "Estacionaiento 6-15" },
-    "5A:D4:D0:C2:07:41:89": { orden: 3, nombre: "Estacionaiento 1-6" },
-    "5A:34:C6:BF:07:41:89": { orden: 4, nombre: "Entrada veicular 16-24" },
+    "5A:F4:7E:C2:07:41:89": { orden: 2, nombre: "Estacionamiento 6-15" },
+    "5A:D4:D0:C2:07:41:89": { orden: 3, nombre: "Estacionamiento 1-6" },
+    "5A:34:C6:BF:07:41:89": { orden: 4, nombre: "Entrada vehicular 16-24" },
     "5A:C4:D0:C2:07:41:89": { orden: 5, nombre: "Salón de jovenes" },
     "5A:B4:88:C5:07:41:89": { orden: 6, nombre: "Corredor" },
     "5A:E4:7E:C2:07:41:89": { orden: 7, nombre: "Sala de juegos" },
     "5A:24:85:BC:07:41:89": { orden: 8, nombre: "Buzonera" },
     "5A:24:C6:BF:07:41:89": { orden: 9, nombre: "Lobby torre E" },
     "5A:A4:88:C5:07:41:89": { orden: 10, nombre: "Lobby torre A" },
-    "5A:B4:D0:C2:07:41:89": { orden: 11, nombre: "Azadores" },
+    "5A:B4:D0:C2:07:41:89": { orden: 11, nombre: "Asadores" },
     "5A:D4:7E:C2:07:41:89": { orden: 12, nombre: "Alberca" },
     "5A:14:C6:BF:07:41:89": { orden: 13, nombre: "GYM" },
     "5A:94:88:C5:07:41:89": { orden: 14, nombre: "Salon de eventos" },
@@ -73,8 +71,7 @@ const STATE = {
     ruta: {
         enCurso: false,
         tipo: null, // Guardará 'GENERAL' o 'AREAS_COMUNES'
-        pasoActual: 1,
-        sesionId: null // ID único para evitar duplicados en la sesión actual
+        pasoActual: 1
     },
     isScanning: false,
     isProcessing: false, 
@@ -115,9 +112,6 @@ const SCREENS = {
             <header class="header-app">
                 <div class="header-logo-text">
                     RONDINES 
-                    <span id="sync-status" onclick="syncOfflineData(true)" style="font-size:0.75rem; color:#facc15; display:none; cursor:pointer; background:rgba(255,255,255,0.15); padding:4px 8px; border-radius:6px; margin-left:10px;">
-                        <i class="fas fa-sync-alt"></i> Pendientes
-                    </span>
                 </div>
                 <div onclick="doLogout()" style="cursor:pointer; color:#ef4444;" title="Cerrar sesión">
                     <i class="fas fa-sign-out-alt fa-lg"></i>
@@ -172,7 +166,6 @@ function navigate(screenName) {
         viewport.innerHTML = SCREENS[screenName];
         if (screenName === 'MAIN') {
             actualizarUIRuta(); 
-            updateSyncUI(); 
         }
     }
 }
@@ -197,8 +190,7 @@ function getNombrePaso(ordenBuscado, catalogo) {
 function encontrarTagEnCatalogo(serialLeido) {
     if (!serialLeido || !STATE.ruta.tipo) return null;
     
-    // Normalizamos quitando espacios y forzando mayúsculas. 
-    // Mantenemos la C ya que está correcta en tu hardware.
+    // Normalizamos quitando espacios y forzando mayúsculas
     const leidoLimpio = serialLeido.trim().toUpperCase();
     const catalogo = getCatalogoActivo();
     
@@ -251,7 +243,6 @@ function iniciarRecorrido(tipo) {
         STATE.ruta.enCurso = true;
         STATE.ruta.tipo = tipo;
         STATE.ruta.pasoActual = 1;
-        STATE.ruta.sesionId = new Date().getTime().toString(); 
         
         guardarEstadoRuta();
         actualizarUIRuta();
@@ -266,7 +257,6 @@ function cancelarRecorrido() {
         STATE.ruta.enCurso = false;
         STATE.ruta.tipo = null;
         STATE.ruta.pasoActual = 1;
-        STATE.ruta.sesionId = null;
         guardarEstadoRuta();
         actualizarUIRuta();
     }
@@ -350,7 +340,7 @@ function checkSession() {
 }
 
 /* =========================================
-   3. LÓGICA NFC Y VALIDACIÓN EDGE
+   3. LÓGICA NFC Y LECTURAS
    ========================================= */
 
 async function toggleNFCScan() {
@@ -452,19 +442,23 @@ async function handleNFCReading(event) {
     if (STATE.ruta.pasoActual === 1) tipoMarca = "Inicio";
     if (STATE.ruta.pasoActual === totalPasos) tipoMarca = "Fin";
 
-    // Azure solo para Inicio y Fin (Cuando FÍSICAMENTE se escanea el tag)
+    // Enviar a Azure solo si es Inicio o Fin
     if (tipoMarca === "Inicio" || tipoMarca === "Fin") {
-        await registerPositionInDB(serialNumber, tipoMarca, STATE.ruta.sesionId);
+        const enviadoCorrectamente = await registerPositionInDB(serialNumber, tipoMarca);
+        
+        // Si no se envió correctamente (por falta de internet o error del servidor), detenemos el avance
+        if (!enviadoCorrectamente) {
+            return; 
+        }
     } else {
         showModal('success', `Punto ${STATE.ruta.pasoActual} validado: ${tagInfo.nombre}`);
     }
 
-    // Avanzar de paso
+    // Avanzar de paso si la validación (y envío en caso de inicio/fin) fue exitosa
     if (STATE.ruta.pasoActual === totalPasos) {
         STATE.ruta.enCurso = false;
         STATE.ruta.pasoActual = 1;
         STATE.ruta.tipo = null; 
-        STATE.ruta.sesionId = null; 
         
         setTimeout(() => {
             showModal('success', "¡RECORRIDO COMPLETADO CON ÉXITO!");
@@ -478,31 +472,13 @@ async function handleNFCReading(event) {
 }
 
 /* =========================================
-   4. COMUNICACIÓN INICIO/FIN CON AZURE + COLA PENDIENTE
+   4. COMUNICACIÓN INICIO/FIN CON AZURE (TIEMPO REAL)
    ========================================= */
 
-function registrarMensajeExitoso(sesionId, tipoMarca) {
-    if (!sesionId) return;
-    let exitosos = JSON.parse(localStorage.getItem(STORAGE_KEYS.SENT)) || {};
-    exitosos[`${sesionId}_${tipoMarca}`] = true;
-    localStorage.setItem(STORAGE_KEYS.SENT, JSON.stringify(exitosos));
-}
-
-function mensajeYaFueEnviado(sesionId, tipoMarca) {
-    if (!sesionId) return false;
-    let exitosos = JSON.parse(localStorage.getItem(STORAGE_KEYS.SENT)) || {};
-    return exitosos[`${sesionId}_${tipoMarca}`] === true;
-}
-
-function limpiarHistorialExitosos() {
-    localStorage.setItem(STORAGE_KEYS.SENT, JSON.stringify({}));
-}
-
-async function registerPositionInDB(tagId, tipoMarca, sesionId) {
-    
-    if (mensajeYaFueEnviado(sesionId, tipoMarca)) {
-        showModal('success', `Paso validado localmente (Aviso de ${tipoMarca} ya se había enviado).`);
-        return;
+async function registerPositionInDB(tagId, tipoMarca) {
+    if (!navigator.onLine) {
+        showModal('error', `No tienes conexión a internet. El aviso de ${tipoMarca} no se puede registrar. Conéctate y vuelve a escanear.`);
+        return false;
     }
 
     showModal('loading', `Procesando aviso de ${tipoMarca}...`);
@@ -520,15 +496,8 @@ async function registerPositionInDB(tagId, tipoMarca, sesionId) {
             TipoMarca: tipoMarca, 
             Ruta: STATE.ruta.tipo,
             Estatus: "Completado"
-        },
-        meta_sesionId: sesionId 
+        }
     };
-
-    if (!navigator.onLine) {
-        saveToOfflineQueue(payload);
-        showModal('success', `Aviso de ${tipoMarca} guardado en pendientes (Sin red).`);
-        return;
-    }
 
     try {
         const response = await fetch(CONFIG.API_PROXY_URL, {
@@ -538,104 +507,15 @@ async function registerPositionInDB(tagId, tipoMarca, sesionId) {
         });
 
         if (response.ok) {
-            registrarMensajeExitoso(sesionId, tipoMarca);
-            showModal('success', `Aviso de ${tipoMarca} registrado en línea.`);
-            
-            if (tipoMarca === 'Fin') limpiarHistorialExitosos();
-
+            showModal('success', `Aviso de ${tipoMarca} registrado en línea correctamente.`);
+            return true;
         } else {
-            saveToOfflineQueue(payload);
-            showModal('error', `Error del servidor. El aviso de ${tipoMarca} se guardó en pendientes.`);
+            showModal('error', `Error del servidor. El aviso de ${tipoMarca} fue rechazado. Vuelve a intentar.`);
+            return false;
         }
     } catch (error) {
-        saveToOfflineQueue(payload);
-        showModal('success', `Aviso de ${tipoMarca} guardado en pendientes (Red inestable).`);
-    }
-}
-
-function saveToOfflineQueue(payload) {
-    let queue = JSON.parse(localStorage.getItem(STORAGE_KEYS.QUEUE)) || [];
-    queue.push(payload);
-    localStorage.setItem(STORAGE_KEYS.QUEUE, JSON.stringify(queue));
-    updateSyncUI();
-}
-
-async function syncOfflineData(isManual = false) {
-    if (!navigator.onLine) {
-        if (isManual) showModal('error', "Aún no hay conexión a internet estable.");
-        return;
-    }
-
-    let queue = JSON.parse(localStorage.getItem(STORAGE_KEYS.QUEUE)) || [];
-    if (queue.length === 0) {
-        updateSyncUI();
-        return;
-    }
-
-    if (isManual) showModal('loading', `Revisando ${queue.length} avisos pendientes...`);
-
-    let newQueue = [];
-    let successCount = 0;
-    let ignoradosCount = 0;
-    let lastErrorMsg = ""; 
-
-    for (let i = 0; i < queue.length; i++) {
-        let item = queue[i];
-        let sesionId = item.meta_sesionId;
-        let tipoMarca = item.data.TipoMarca;
-
-        if (mensajeYaFueEnviado(sesionId, tipoMarca)) {
-            ignoradosCount++;
-            continue; 
-        }
-
-        try {
-            const response = await fetch(CONFIG.API_PROXY_URL, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(item)
-            });
-            
-            if (response.ok) {
-                registrarMensajeExitoso(sesionId, tipoMarca);
-                successCount++;
-            } else {
-                newQueue.push(item); 
-                lastErrorMsg = "Rechazado por el servidor";
-            }
-        } catch (error) {
-            newQueue.push(item); 
-            lastErrorMsg = "Fallo de red o Proxy caído";
-        }
-
-        await new Promise(resolve => setTimeout(resolve, 500));
-    }
-
-    localStorage.setItem(STORAGE_KEYS.QUEUE, JSON.stringify(newQueue));
-    updateSyncUI();
-    
-    if (isManual) {
-        if (newQueue.length === 0) {
-            let msg = successCount > 0 ? `¡${successCount} avisos enviados con éxito!` : "Cola limpia. No había avisos nuevos que enviar.";
-            if (ignoradosCount > 0) msg += ` (${ignoradosCount} duplicados ignorados).`;
-            showModal('success', msg);
-            limpiarHistorialExitosos();
-        } else {
-            showModal('error', `Se enviaron ${successCount}. Fallaron ${newQueue.length}. Motivo: ${lastErrorMsg}`);
-        }
-    }
-}
-
-function updateSyncUI() {
-    const syncBadge = document.getElementById('sync-status');
-    if (!syncBadge) return;
-
-    let queue = JSON.parse(localStorage.getItem(STORAGE_KEYS.QUEUE)) || [];
-    if (queue.length > 0) {
-        syncBadge.style.display = 'inline-block';
-        syncBadge.innerHTML = `<i class="fas fa-sync-alt"></i> ${queue.length} Pendiente(s)`;
-    } else {
-        syncBadge.style.display = 'none';
+        showModal('error', `Fallo de red. El aviso de ${tipoMarca} no pudo enviarse. Vuelve a intentar.`);
+        return false;
     }
 }
 
@@ -668,13 +548,8 @@ function closeModal() {
 }
 
 /* =========================================
-   6. EVENTOS DE RED Y ARRANQUE
+   6. ARRANQUE
    ========================================= */
-
-window.addEventListener('online', () => {
-    console.log("Conexión restaurada. Intentando enviar avisos pendientes silenciosamente.");
-    syncOfflineData(false);
-});
 
 window.onload = () => {
     checkSession();
