@@ -19,11 +19,11 @@ const STORAGE_KEYS = {
 
 const CATALOGO_GENERAL = {
     "5A:94:07:BC:07:41:89": { orden: 1, nombre: "Caseta (INICIO DE RECORRIDO GENERAL)" },
-    "5A:F4:7E:C2:07:41:89": { orden: 2, nombre: "Estacionamiento 6-15" },
     "5A:D4:D0:C2:07:41:89": { orden: 3, nombre: "Estacionamiento 1-6" },
+    "5A:F4:7E:C2:07:41:89": { orden: 2, nombre: "Estacionamiento 6-15" },
     "5A:34:C6:BF:07:41:89": { orden: 4, nombre: "Entrada vehicular 16-24" },
     "5A:C4:D0:C2:07:41:89": { orden: 5, nombre: "Salón de jovenes" },
-    "5A:B4:88:C5:07:41:89": { orden: 6, nombre: "Corredor" },
+    "5A:B4:88:C5:07:41:89": { orden: 6, nombre: "Comedor" },
     "5A:E4:7E:C2:07:41:89": { orden: 7, nombre: "Sala de juegos" },
     "5A:24:85:BC:07:41:89": { orden: 8, nombre: "Buzonera" },
     "5A:A4:07:BC:07:41:89": { orden: 9, nombre: "Azotea A-B" },
@@ -43,11 +43,11 @@ const CATALOGO_GENERAL = {
 
 const CATALOGO_AREAS_COMUNES = {
     "5A:94:07:BC:07:41:89": { orden: 1, nombre: "Caseta (INICIO DE RECORRIDO GENERAL)" },
-    "5A:F4:7E:C2:07:41:89": { orden: 2, nombre: "Estacionamiento 6-15" },
     "5A:D4:D0:C2:07:41:89": { orden: 3, nombre: "Estacionamiento 1-6" },
+    "5A:F4:7E:C2:07:41:89": { orden: 2, nombre: "Estacionamiento 6-15" },
     "5A:34:C6:BF:07:41:89": { orden: 4, nombre: "Entrada vehicular 16-24" },
     "5A:C4:D0:C2:07:41:89": { orden: 5, nombre: "Salón de jovenes" },
-    "5A:B4:88:C5:07:41:89": { orden: 6, nombre: "Corredor" },
+    "5A:B4:88:C5:07:41:89": { orden: 6, nombre: "Comedor" },
     "5A:E4:7E:C2:07:41:89": { orden: 7, nombre: "Sala de juegos" },
     "5A:24:85:BC:07:41:89": { orden: 8, nombre: "Buzonera" },
     "5A:24:C6:BF:07:41:89": { orden: 9, nombre: "Lobby torre E" },
