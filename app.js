@@ -27,7 +27,7 @@ const CATALOGO_GENERAL = {
     "5A:E4:7E:C2:07:41:89": { orden: 7, nombre: "Sala de juegos" },
     "5A:24:85:BC:07:41:89": { orden: 8, nombre: "Buzonera" },
     "5A:A4:07:BC:07:41:89": { orden: 9, nombre: "Azotea A-B" },
-    "5A:B4:3F:B9:07:41:89": { orden: 10, nombre: "Azotea C" },
+    "5A:B4:37:B9:07:41:89": { orden: 10, nombre: "Azotea C" },
     "5A:34:55:BF:07:41:89": { orden: 11, nombre: "Azotea D-E"},
     "5A:24:C6:BF:07:41:89": { orden: 12, nombre: "Lobby torre E" },
     "5A:A4:88:C5:07:41:89": { orden: 13, nombre: "Lobby torre A" },
