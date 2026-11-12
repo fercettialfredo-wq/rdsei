@@ -1,5 +1,5 @@
 // Cambia la versión cada vez que hagas un cambio en tus archivos (ej. v12, v13...)
-const CACHE_NAME = 'Ravens-Access-v14';
+const CACHE_NAME = 'Ravens-Access-v15';
 
 const assets = [
   './',
